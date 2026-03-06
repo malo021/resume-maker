@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Resume Maker</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #faf8f5;
+      --surface: #ffffff;
+      --border: #e8e2d9;
+      --accent: #1a1a2e;
+      --accent2: #c84b31;
+      --text: #1a1a2e;
+      --muted: #8a8070;
+      --light: #f0ebe3;
+      --font: 'DM Sans', sans-serif;
+      --font-serif: 'DM Serif Display', serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: var(--accent);
+      padding: 24px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-logo {
+      font-family: var(--font-serif);
+      font-size: 28px;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+
+    .header-logo span { color: #c84b31; }
+
+    .header-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* ── Steps ── */
+    .steps-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 48px;
+      display: flex;
+      gap: 0;
+    }
+
+    .step {
+      padding: 16px 24px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .step.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent2);
+    }
+
+    .step-num {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+    }
+
+    .step.active .step-num {
+      background: var(--accent2);
+      color: #fff;
+    }
+
+    /* ── Main ── */
+    .main { max-width: 900px; margin: 0 auto; padding: 48px 24px; }
+
+    .section-title {
+      font-family: var(--font-serif);
+      font-size: 32px;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .section-sub {
+      color: var(--muted);
+      font-size: 15px;
+      margin-bottom: 40px;
+    }
+
+    /* ── Form ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+    }
+
+    input, textarea {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+      resize: vertical;
+    }
+
+    input:focus, textarea:focus {
+      border-color: var(--accent);
+    }
+
+    input::placeholder, textarea::placeholder { color: #c0b8ae; }
+
+    textarea { min-height: 100px; }
+
+    .form-section {
+      margin-bottom: 40px;
+    }
+
+    .form-section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .form-section-title::before {
+      content: '';
+      width: 4px; height: 20px;
+      background: var(--accent2);
+      border-radius: 2px;
+    }
+
+    .btn {
+      padding: 14px 32px;
+      border-radius: 8px;
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: #2d2d4e;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(26,26,46,0.2);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-outline:hover { border-color: var(--accent); }
+
+    .btn-download {
+      background: var(--accent2);
+      color: #fff;
+    }
+
+    .btn-download:hover {
+      background: #a83828;
+      transform: translateY(-1px);
+    }
+
+    /* ── Loading ── */
+    .loading-screen {
+      display: none;
+      text-align: center;
+      padding: 80px 0;
+    }
+
+    .loading-screen.show { display: block; }
+
+    .spinner {
+      width: 48px; height: 48px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent2);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 24px;
+    }
+
+    .loading-text {
+      font-family: var(--font-serif);
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .loading-sub { color: var(--muted); font-size: 14px; }
+
+    /* ── Template Picker ── */
+    .templates-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .template-card {
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .template-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .template-card.selected { border-color: var(--accent2); box-shadow: 0 0 0 4px rgba(200,75,49,0.1); }
+
+    .template-preview {
+      height: 200px;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Modern template preview */
+    .preview-modern {
+      background: #1a1a2e;
+    }
+
+    .preview-modern .p-name { color: #fff; font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .preview-modern .p-title { color: #c84b31; font-size: 10px; margin-bottom: 12px; font-family: var(--font-mono); }
+    .preview-modern .p-line { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-bottom: 6px; }
+    .preview-modern .p-line.short { width: 60%; }
+    .preview-modern .p-line.shorter { width: 40%; }
+    .preview-modern .p-section { color: #c84b31; font-size: 9px; font-family: var(--font-mono); margin: 10px 0 6px; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* Classic template preview */
+    .preview-classic {
+      background: #fff;
+      border-bottom: 3px solid #1a1a2e;
+    }
+
+    .preview-classic .p-name { color: #1a1a2e; font-size: 16px; font-weight: 700; text-align: center; margin-bottom: 2px; }
+    .preview-classic .p-contact { color: #666; font-size: 9px; text-align: center; margin-bottom: 10px; }
+    .preview-classic .p-divider { height: 1px; background: #1a1a2e; margin-bottom: 8px; }
+    .preview-classic .p-section { color: #1a1a2e; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .preview-classic .p-line { height: 5px; background: #e0e0e0; border-radius: 2px; margin-bottom: 4px; }
+    .preview-classic .p-line.short { width: 70%; }
+
+    /* Minimal template preview */
+    .preview-minimal {
+      background: #fafafa;
+    }
+
+    .preview-minimal .p-name { color: #111; font-size: 18px; font-weight: 300; letter-spacing: -0.5px; margin-bottom: 2px; }
+    .preview-minimal .p-title { color: #999; font-size: 9px; margin-bottom: 16px; letter-spacing: 2px; text-transform: uppercase; }
+    .preview-minimal .p-line { height: 5px; background: #e8e8e8; border-radius: 2px; margin-bottom: 6px; }
+    .preview-minimal .p-line.short { width: 55%; }
+    .preview-minimal .p-accent { width: 24px; height: 2px; background: #111; margin-bottom: 8px; }
+
+    .template-info {
+      padding: 14px 16px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+    }
+
+    .template-name {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .template-desc { font-size: 12px; color: var(--muted); }
+
+    /* ── Resume Preview ── */
+    .resume-preview-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 32px;
+      min-height: 400px;
+    }
+
+    /* Modern Resume */
+    .resume-modern {
+      background: #1a1a2e;
+      color: #fff;
+      padding: 40px;
+      border-radius: 8px;
+      font-family: var(--font);
+    }
+
+    .resume-modern .r-name { font-size: 32px; font-weight: 700; letter-spacing: -1px; margin-bottom: 4px; }
+    .resume-modern .r-contact { color: rgba(255,255,255,0.5); font-size: 13px; font-family: var(--font-mono); margin-bottom: 24px; }
+    .resume-modern .r-section { color: #c84b31; font-size: 11px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 2px; margin: 24px 0 12px; }
+    .resume-modern .r-divider { height: 1px; background: rgba(255,255,255,0.1); margin-bottom: 16px; }
+    .resume-modern .r-text { color: rgba(255,255,255,0.8); font-size: 14px; line-height: 1.7; }
+    .resume-modern .r-item-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+    .resume-modern .r-item-sub { color: #c84b31; font-size: 12px; font-family: var(--font-mono); margin-bottom: 6px; }
+    .resume-modern .r-item { margin-bottom: 16px; }
+    .resume-modern .r-skills { display: flex; flex-wrap: wrap; gap: 8px; }
+    .resume-modern .r-skill { background: rgba(255,255,255,0.08); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-family: var(--font-mono); }
+
+    /* Classic Resume */
+    .resume-classic {
+      background: #fff;
+      color: #111;
+      padding: 40px;
+      border-radius: 8px;
+      font-family: Georgia, serif;
+      border-top: 6px solid #1a1a2e;
+    }
+
+    .resume-classic .r-name { font-size: 28px; font-weight: 700; text-align: center; letter-spacing: -0.5px; margin-bottom: 4px; }
+    .resume-classic .r-contact { text-align: center; font-size: 13px; color: #555; margin-bottom: 20px; font-family: var(--font); }
+    .resume-classic .r-section { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin: 20px 0 8px; color: #1a1a2e; font-family: var(--font); }
+    .resume-classic .r-divider { height: 1px; background: #1a1a2e; margin-bottom: 12px; }
+    .resume-classic .r-text { font-size: 14px; line-height: 1.7; color: #333; }
+    .resume-classic .r-item-title { font-weight: 700; font-size: 14px; }
+    .resume-classic .r-item-sub { font-size: 13px; color: #666; font-style: italic; margin-bottom: 4px; font-family: var(--font); }
+    .resume-classic .r-item { margin-bottom: 14px; }
+    .resume-classic .r-skills { font-size: 14px; color: #333; line-height: 1.7; }
+
+    /* Minimal Resume */
+    .resume-minimal {
+      background: #fafafa;
+      color: #111;
+      padding: 40px;
+      border-radius: 8px;
+      font-family: var(--font);
+    }
+
+    .resume-minimal .r-name { font-size: 36px; font-weight: 300; letter-spacing: -1px; margin-bottom: 4px; }
+    .resume-minimal .r-contact { font-size: 13px; color: #999; margin-bottom: 32px; letter-spacing: 0.5px; }
+    .resume-minimal .r-section { font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: #999; margin: 28px 0 12px; }
+    .resume-minimal .r-divider { width: 32px; height: 2px; background: #111; margin-bottom: 16px; }
+    .resume-minimal .r-text { font-size: 14px; line-height: 1.8; color: #333; }
+    .resume-minimal .r-item-title { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
+    .resume-minimal .r-item-sub { font-size: 13px; color: #999; margin-bottom: 6px; }
+    .resume-minimal .r-item { margin-bottom: 16px; }
+    .resume-minimal .r-skills { display: flex; flex-wrap: wrap; gap: 6px; }
+    .resume-minimal .r-skill { border: 1px solid #ddd; padding: 3px 10px; border-radius: 4px; font-size: 12px; color: #555; }
+
+    .action-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    /* Page sections */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 700px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .templates-grid { grid-template-columns: 1fr; }
+      .header { padding: 20px 24px; }
+      .main { padding: 32px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">Resume<span>AI</span></div>
+  <div class="header-tag">Powered by GPT-4o</div>
+</div>
+
+<div class="steps-bar">
+  <div class="step active" id="step1"><span class="step-num">1</span> Your Details</div>
+  <div class="step" id="step2"><span class="step-num">2</span> Choose Template</div>
+  <div class="step" id="step3"><span class="step-num">3</span> Download</div>
+</div>
+
+<!-- Page 1: Form -->
+<div class="main page active" id="page1">
+  <div class="section-title">Tell us about yourself</div>
+  <p class="section-sub">Fill in your details — AI will polish everything into professional resume language.</p>
+
+  <div class="form-section">
+    <div class="form-section-title">Personal Information</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Full Name</label><input id="name" placeholder="John Doe"/></div>
+      <div class="form-group"><label>Email</label><input id="email" placeholder="john@email.com"/></div>
+      <div class="form-group"><label>Phone</label><input id="phone" placeholder="+1 234 567 8900"/></div>
+      <div class="form-group"><label>Location</label><input id="location" placeholder="New York, NY"/></div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title">Professional Summary</div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Brief Summary</label>
+        <textarea id="summary" placeholder="I'm a software engineer with 2 years experience in web development. I love building products and working in teams..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title">Education</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Degree & Field</label><input id="eduDegree" placeholder="B.Sc. Computer Science"/></div>
+      <div class="form-group"><label>University</label><input id="eduSchool" placeholder="University of XYZ"/></div>
+      <div class="form-group"><label>Year</label><input id="eduYear" placeholder="2020 - 2024"/></div>
+      <div class="form-group"><label>GPA / Grade (optional)</label><input id="eduGpa" placeholder="3.8/4.0"/></div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title">Work Experience</div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Experience (describe each role)</label>
+        <textarea id="experience" rows="5" placeholder="Software Engineer Intern at Google (Jun-Aug 2023): Built a dashboard using React that improved team productivity by 30%. Worked with senior engineers on backend APIs..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title">Projects</div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Projects</label>
+        <textarea id="projects" placeholder="Crypto Dashboard: Built a real-time cryptocurrency price tracker using Python, Flask, SQLite and Chart.js. Deployed on Railway and Netlify..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title">Skills</div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Skills (comma separated)</label>
+        <input id="skills" placeholder="Python, JavaScript, React, SQL, Flask, Git, HTML, CSS"/>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="generateBtn" onclick="generateResume()">
+    ✨ Generate with AI
+  </button>
+</div>
+
+<!-- Loading -->
+<div class="main loading-screen" id="loadingScreen">
+  <div class="spinner"></div>
+  <div class="loading-text">Crafting your resume...</div>
+  <p class="loading-sub">AI is polishing your details into professional language</p>
+</div>
+
+<!-- Page 2: Template Picker -->
+<div class="main page" id="page2">
+  <div class="section-title">Choose your template</div>
+  <p class="section-sub">Select the style that best fits the role you're applying for.</p>
+
+  <div class="templates-grid">
+    <div class="template-card selected" onclick="selectTemplate('modern')" id="tpl-modern">
+      <div class="template-preview preview-modern">
+        <div class="p-name">John Doe</div>
+        <div class="p-title">SOFTWARE ENGINEER</div>
+        <div class="p-line"></div>
+        <div class="p-line short"></div>
+        <div class="p-section">Experience</div>
+        <div class="p-line"></div>
+        <div class="p-line short"></div>
+        <div class="p-section">Skills</div>
+        <div class="p-line shorter"></div>
+      </div>
+      <div class="template-info">
+        <div class="template-name">Modern</div>
+        <div class="template-desc">Bold, dark theme — great for tech roles</div>
+      </div>
+    </div>
+
+    <div class="template-card" onclick="selectTemplate('classic')" id="tpl-classic">
+      <div class="template-preview preview-classic">
+        <div class="p-name">John Doe</div>
+        <div class="p-contact">john@email.com · New York, NY</div>
+        <div class="p-divider"></div>
+        <div class="p-section">Education</div>
+        <div class="p-line"></div>
+        <div class="p-line short"></div>
+        <div class="p-section">Experience</div>
+        <div class="p-line"></div>
+        <div class="p-line short"></div>
+      </div>
+      <div class="template-info">
+        <div class="template-name">Classic</div>
+        <div class="template-desc">Traditional format — suits all industries</div>
+      </div>
+    </div>
+
+    <div class="template-card" onclick="selectTemplate('minimal')" id="tpl-minimal">
+      <div class="template-preview preview-minimal">
+        <div class="p-name">John Doe</div>
+        <div class="p-title">SOFTWARE ENGINEER</div>
+        <div class="p-accent"></div>
+        <div class="p-line"></div>
+        <div class="p-line short"></div>
+        <div class="p-accent"></div>
+        <div class="p-line"></div>
+        <div class="p-line short"></div>
+      </div>
+      <div class="template-info">
+        <div class="template-name">Minimal</div>
+        <div class="template-desc">Clean & elegant — perfect for creative roles</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="resume-preview-wrap" id="resumePreview"></div>
+
+  <div class="action-row">
+    <button class="btn btn-download" onclick="downloadPDF()">⬇ Download PDF</button>
+    <button class="btn btn-outline" onclick="goBack()">← Edit Details</button>
+  </div>
+</div>
+
+<script>
+  const BACKEND = 'https://resume-maker-gilt.vercel.app/api/generate';
+  let resumeData = null;
+  let selectedTemplate = 'modern';
+
+  function showPage(id) {
+    document.querySelectorAll('.page, .loading-screen').forEach(p => {
+      p.classList.remove('active', 'show');
+    });
+    document.querySelectorAll('.step').forEach((s, i) => {
+      s.classList.remove('active');
+    });
+
+    if (id === 'loading') {
+      document.getElementById('loadingScreen').classList.add('show');
+    } else {
+      document.getElementById(id).classList.add('active');
+      if (id === 'page1') document.getElementById('step1').classList.add('active');
+      if (id === 'page2') {
+        document.getElementById('step2').classList.add('active');
+        document.getElementById('step3').classList.add('active');
+      }
+    }
+  }
+
+  async function generateResume() {
+    const userData = {
+      name: document.getElementById('name').value,
+      email: document.getElementById('email').value,
+      phone: document.getElementById('phone').value,
+      location: document.getElementById('location').value,
+      summary: document.getElementById('summary').value,
+      education: `${document.getElementById('eduDegree').value} at ${document.getElementById('eduSchool').value} (${document.getElementById('eduYear').value}) ${document.getElementById('eduGpa').value}`,
+      experience: document.getElementById('experience').value,
+      projects: document.getElementById('projects').value,
+      skills: document.getElementById('skills').value
+    };
+
+    if (!userData.name || !userData.email) {
+      alert('Please fill in at least your name and email.');
+      return;
+    }
+
+    showPage('loading');
+
+    try {
+      const res = await fetch(BACKEND, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userData })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Something went wrong');
+
+      resumeData = data.result;
+      showPage('page2');
+      renderPreview(selectedTemplate);
+
+    } catch(err) {
+      alert('Error: ' + err.message);
+      showPage('page1');
+    }
+  }
+
+  function selectTemplate(tpl) {
+    selectedTemplate = tpl;
+    document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('tpl-' + tpl).classList.add('selected');
+    renderPreview(tpl);
+  }
+
+  function renderPreview(tpl) {
+    if (!resumeData) return;
+    const d = resumeData;
+    let html = '';
+
+    if (tpl === 'modern') {
+      html = `<div class="resume-modern" id="resume-render">
+        <div class="r-name">${d.name}</div>
+        <div class="r-contact">${d.email} · ${d.phone} · ${d.location}</div>
+        <div class="r-section">Summary</div>
+        <div class="r-divider"></div>
+        <div class="r-text">${d.summary}</div>
+        <div class="r-section">Education</div>
+        <div class="r-divider"></div>
+        <div class="r-item"><div class="r-text">${d.education}</div></div>
+        <div class="r-section">Experience</div>
+        <div class="r-divider"></div>
+        <div class="r-item"><div class="r-text">${d.experience}</div></div>
+        <div class="r-section">Projects</div>
+        <div class="r-divider"></div>
+        <div class="r-item"><div class="r-text">${d.projects}</div></div>
+        <div class="r-section">Skills</div>
+        <div class="r-divider"></div>
+        <div class="r-skills">${d.skills.split(',').map(s => `<span class="r-skill">${s.trim()}</span>`).join('')}</div>
+      </div>`;
+    } else if (tpl === 'classic') {
+      html = `<div class="resume-classic" id="resume-render">
+        <div class="r-name">${d.name}</div>
+        <div class="r-contact">${d.email} · ${d.phone} · ${d.location}</div>
+        <div class="r-section">Professional Summary</div>
+        <div class="r-divider"></div>
+        <div class="r-text">${d.summary}</div>
+        <div class="r-section">Education</div>
+        <div class="r-divider"></div>
+        <div class="r-item"><div class="r-text">${d.education}</div></div>
+        <div class="r-section">Work Experience</div>
+        <div class="r-divider"></div>
+        <div class="r-item"><div class="r-text">${d.experience}</div></div>
+        <div class="r-section">Projects</div>
+        <div class="r-divider"></div>
+        <div class="r-item"><div class="r-text">${d.projects}</div></div>
+        <div class="r-section">Skills</div>
+        <div class="r-divider"></div>
+        <div class="r-skills">${d.skills}</div>
+      </div>`;
+    } else {
+      html = `<div class="resume-minimal" id="resume-render">
+        <div class="r-name">${d.name}</div>
+        <div class="r-contact">${d.email} · ${d.phone} · ${d.location}</div>
+        <div class="r-section">Summary</div>
+        <div class="r-divider"></div>
+        <div class="r-text">${d.summary}</div>
+        <div class="r-section">Education</div>
+        <div class="r-divider"></div>
+        <div class="r-item"><div class="r-text">${d.education}</div></div>
+        <div class="r-section">Experience</div>
+        <div class="r-divider"></div>
+        <div class="r-item"><div class="r-text">${d.experience}</div></div>
+        <div class="r-section">Projects</div>
+        <div class="r-divider"></div>
+        <div class="r-item"><div class="r-text">${d.projects}</div></div>
+        <div class="r-section">Skills</div>
+        <div class="r-divider"></div>
+        <div class="r-skills">${d.skills.split(',').map(s => `<span class="r-skill">${s.trim()}</span>`).join('')}</div>
+      </div>`;
+    }
+
+    document.getElementById('resumePreview').innerHTML = html;
+  }
+
+  function downloadPDF() {
+    if (!resumeData) return;
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const d = resumeData;
+
+    const W = doc.internal.pageSize.getWidth();
+    let y = 40;
+
+    function addLine(text, size, bold, color, align) {
+      doc.setFontSize(size);
+      doc.setFont('helvetica', bold ? 'bold' : 'normal');
+      doc.setTextColor(...(color || [0,0,0]));
+      const x = align === 'center' ? W/2 : 40;
+      doc.text(text || '', x, y, align === 'center' ? {align:'center'} : {});
+      y += size * 1.5;
+    }
+
+    function addWrapped(text, size, color) {
+      doc.setFontSize(size);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...(color || [60,60,60]));
+      const lines = doc.splitTextToSize(text || '', W - 80);
+      doc.text(lines, 40, y);
+      y += lines.length * size * 1.4 + 6;
+    }
+
+    function addSection(title) {
+      y += 8;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(200, 75, 49);
+      doc.text(title.toUpperCase(), 40, y);
+      y += 14;
+      doc.setDrawColor(200, 75, 49);
+      doc.line(40, y, W - 40, y);
+      y += 10;
+    }
+
+    if (selectedTemplate === 'classic') {
+      doc.setFillColor(26, 26, 46);
+      doc.rect(0, 0, W, 6, 'F');
+      y = 40;
+      addLine(d.name, 24, true, [26,26,46], 'center');
+      addLine(`${d.email} · ${d.phone} · ${d.location}`, 10, false, [100,100,100], 'center');
+    } else {
+      addLine(d.name, 26, true, [26,26,46]);
+      addLine(`${d.email} · ${d.phone} · ${d.location}`, 10, false, [130,130,130]);
+    }
+
+    addSection('Summary');
+    addWrapped(d.summary, 11);
+
+    addSection('Education');
+    addWrapped(d.education, 11);
+
+    addSection('Experience');
+    addWrapped(d.experience, 11);
+
+    addSection('Projects');
+    addWrapped(d.projects, 11);
+
+    addSection('Skills');
+    addWrapped(d.skills, 11);
+
+    doc.save(`${d.name.replace(/\s+/g, '_')}_Resume.pdf`);
+  }
+
+  function goBack() {
+    showPage('page1');
+  }
+</script>
+</body>
+</html>
