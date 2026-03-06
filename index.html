@@ -6,6 +6,7 @@
   <title>AI Resume Maker</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -542,7 +543,7 @@
     <div class="template-card" onclick="selectTemplate('classic')" id="tpl-classic">
       <div class="template-preview preview-classic">
         <div class="p-name">John Doe</div>
-        <div class="p-contact">john@email.com · New York, NY</div>
+        <div class="p-contact"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="9af0f5f2f4dafff7fbf3f6b4f9f5f7">[email&#160;protected]</a> · New York, NY</div>
         <div class="p-divider"></div>
         <div class="p-section">Education</div>
         <div class="p-line"></div>
@@ -583,7 +584,7 @@
   </div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
   const BACKEND = 'https://resume-maker-gilt.vercel.app/api/generate';
   let resumeData = null;
   let selectedTemplate = 'modern';
@@ -726,72 +727,25 @@
     document.getElementById('resumePreview').innerHTML = html;
   }
 
-  function downloadPDF() {
+  async function downloadPDF() {
     if (!resumeData) return;
+    const btn = document.querySelector('.btn-download');
+    btn.textContent = '⏳ Generating PDF...';
+    btn.disabled = true;
+
+    const element = document.getElementById('resume-render');
+    const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: null });
+    const imgData = canvas.toDataURL('image/png');
+
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-    const d = resumeData;
+    const pdf = new jsPDF({ unit: 'px', format: 'a4' });
+    const pdfW = pdf.internal.pageSize.getWidth();
+    const pdfH = (canvas.height * pdfW) / canvas.width;
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
+    pdf.save(`${resumeData.name.replace(/\s+/g, '_')}_Resume.pdf`);
 
-    const W = doc.internal.pageSize.getWidth();
-    let y = 40;
-
-    function addLine(text, size, bold, color, align) {
-      doc.setFontSize(size);
-      doc.setFont('helvetica', bold ? 'bold' : 'normal');
-      doc.setTextColor(...(color || [0,0,0]));
-      const x = align === 'center' ? W/2 : 40;
-      doc.text(text || '', x, y, align === 'center' ? {align:'center'} : {});
-      y += size * 1.5;
-    }
-
-    function addWrapped(text, size, color) {
-      doc.setFontSize(size);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...(color || [60,60,60]));
-      const lines = doc.splitTextToSize(text || '', W - 80);
-      doc.text(lines, 40, y);
-      y += lines.length * size * 1.4 + 6;
-    }
-
-    function addSection(title) {
-      y += 8;
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(200, 75, 49);
-      doc.text(title.toUpperCase(), 40, y);
-      y += 14;
-      doc.setDrawColor(200, 75, 49);
-      doc.line(40, y, W - 40, y);
-      y += 10;
-    }
-
-    if (selectedTemplate === 'classic') {
-      doc.setFillColor(26, 26, 46);
-      doc.rect(0, 0, W, 6, 'F');
-      y = 40;
-      addLine(d.name, 24, true, [26,26,46], 'center');
-      addLine(`${d.email} · ${d.phone} · ${d.location}`, 10, false, [100,100,100], 'center');
-    } else {
-      addLine(d.name, 26, true, [26,26,46]);
-      addLine(`${d.email} · ${d.phone} · ${d.location}`, 10, false, [130,130,130]);
-    }
-
-    addSection('Summary');
-    addWrapped(d.summary, 11);
-
-    addSection('Education');
-    addWrapped(d.education, 11);
-
-    addSection('Experience');
-    addWrapped(d.experience, 11);
-
-    addSection('Projects');
-    addWrapped(d.projects, 11);
-
-    addSection('Skills');
-    addWrapped(d.skills, 11);
-
-    doc.save(`${d.name.replace(/\s+/g, '_')}_Resume.pdf`);
+    btn.textContent = '⬇ Download PDF';
+    btn.disabled = false;
   }
 
   function goBack() {
@@ -800,3 +754,4 @@
 </script>
 </body>
 </html>
+
